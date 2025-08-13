@@ -1,0 +1,26 @@
+# 邮件API配置文件示例
+# 复制此文件为 smtp.properties 并修改为你的配置
+
+# 邮件API服务地址
+MAIL_API_URL=http://localhost:5000/send-email
+
+# SMTP认证信息（传递给邮件API）
+# 方案1: 使用QQ邮箱
+SMTP_USER=your_qq_email@qq.com
+SMTP_PASS=your_qq_auth_code
+SMTP_FROM_NAME=YourTeam
+
+# 方案2: 使用163邮箱
+# SMTP_USER=your_163_email@163.com
+# SMTP_PASS=your_163_auth_code
+# SMTP_FROM_NAME=YourTeam
+
+# 方案3: 使用Gmail (需要开启两步验证)
+# SMTP_USER=your_gmail@gmail.com
+# SMTP_PASS=your_gmail_app_password
+# SMTP_FROM_NAME=YourTeam
+
+# 方案4: 使用自有域名邮箱
+# SMTP_USER=your_email@example.com
+# SMTP_PASS=example_password
+# SMTP_FROM_NAME=YourTeam 

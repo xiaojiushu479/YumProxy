@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft加速IP管理平台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #1abc9c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 70px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 20px 0;
+            transition: width 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar:hover {
+            width: 220px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            margin: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(52, 152, 219, 0.3);
+        }
+
+        .sidebar-item.active {
+            background: var(--primary);
+        }
+
+        .sidebar-item i {
+            font-size: 24px;
+            min-width: 30px;
+            margin-right: 15px;
+        }
+
+        .sidebar-item span {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .sidebar:hover .sidebar-item span {
+            opacity: 1;
+        }
+
+        /* 移动端侧边栏 */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 25px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1 i {
+            color: var(--accent);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* 卡片样式 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3 i {
+            font-size: 24px;
+        }
+
+        .card p {
+            margin: 8px 0;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+
+        .card .info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card .info div {
+            text-align: center;
+        }
+
+        .card .info .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .card .info .label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* 按钮样式 */
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* 线路卡片 */
+        .server-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .server-card .ip {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 15px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        /* 计时器样式 */
+        .timer {
+            text-align: center;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .timer-display {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: var(--accent);
+            font-family: monospace;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .timer-btn {
+            padding: 12px 25px;
+            border-radius: 50px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .timer-btn.start {
+            background: var(--success);
+            color: white;
+        }
+
+        .timer-btn.pause {
+            background: var(--warning);
+            color: white;
+        }
+
+        .timer-btn.reset {
+            background: var(--danger);
+            color: white;
+        }
+
+        .timer-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 用户设置表单 */
+        .setting-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .setting-section h3 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 992px) {
+            .card-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+            
+            .sidebar {
+                position: fixed;
+                height: 100vh;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 999;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+                width: 250px;
+            }
+            
+            .sidebar-toggle {
+                display: block;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding-top: 70px;
+            }
+            
+            .header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .user-info {
+                justify-content: center;
+            }
+            
+            .timer-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar.active {
+                width: 220px;
+            }
+            
+            .timer-display {
+                font-size: 36px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .card {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .timer-display {
+                font-size: 28px;
+            }
+            
+            .timer-btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="container">
+        <!-- 左侧侧边栏 -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-item active" data-page="home">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </div>
+            <div class="sidebar-item" data-page="card">
+                <i class="fas fa-key"></i>
+                <span>卡密管理</span>
+            </div>
+            <div class="sidebar-item" data-page="line">
+                <i class="fas fa-server"></i>
+                <span>线路管理</span>
+            </div>
+            <div class="sidebar-item" data-page="timer">
+                <i class="fas fa-clock"></i>
+                <span>暂停时长</span>
+            </div>
+            <div class="sidebar-item" data-page="user-setting">
+                <i class="fas fa-user-cog"></i>
+                <span>用户设置</span>
+            </div>
+            <div class="sidebar-item" data-page="system-setting">
+                <i class="fas fa-cog"></i>
+                <span>系统设置</span>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <div class="header">
+                <h1><i class="fas fa-bolt"></i> Minecraft加速IP管理平台</h1>
+                <div class="user-info">
+                    <div class="user-avatar">U</div>
+                    <div>
+                        <div>用户名: User123</div>
+                        <div style="font-size: 12px; color: #aaa;">VIP会员</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 首页 -->
+            <div id="home" class="page active">
+                <h2><i class="fas fa-rocket"></i> 加速IP列表</h2>
+                <p>选择您需要的加速IP服务，提升您的Minecraft游戏体验</p>
+                
+                <div class="card-grid">
+                    <div class="card">
+                        <h3><i class="fas fa-globe-americas"></i> 北美线路</h3>
+                        <p><i class="fas fa-tachometer-alt"></i> 超低延迟：<strong>35ms</strong></p>
+                        <p><i class="fas fa-shield-alt"></i> 高级DDoS防护</p>
+                        <p><i class="fas fa-plug"></i> 99.9% 在线率</p>
+                        <p><i class="fas fa-user-friends"></i> 最大支持 500 玩家</p>
+                        <div class="info">
+                            <div>
+                                <div class="value">¥29</div>
+                                <div class="label">每月</div>
+                            </div>
+                            <div>
+                                <div class="value">¥299</div>
+                                <div class="label">每年</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success">立即购买</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class="fas fa-globe-asia"></i> 亚洲线路</h3>
+                        <p><i class="fas fa-tachometer-alt"></i> 超低延迟：<strong>25ms</strong></p>
+                        <p><i class="fas fa-shield-alt"></i> 高级DDoS防护</p>
+                        <p><i class="fas fa-plug"></i> 99.9% 在线率</p>
+                        <p><i class="fas fa-user-friends"></i> 最大支持 800 玩家</p>
+                        <div class="info">
+                            <div>
+                                <div class="value">¥39</div>
+                                <div class="label">每月</div>
+                            </div>
+                            <div>
+                                <div class="value">¥399</div>
+                                <div class="label">每年</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success">立即购买</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3><i class="fas fa-globe-europe"></i> 欧洲线路</h3>
+                        <p><i class="fas fa-tachometer-alt"></i> 超低延迟：<strong>45ms</strong></p>
+                        <p><i class="fas fa-shield-alt"></i> 高级DDoS防护</p>
+                        <p><i class="fas fa-plug"></i> 99.9% 在线率</p>
+                        <p><i class="fas fa-user-friends"></i> 最大支持 600 玩家</p>
+                        <div class="info">
+                            <div>
+                                <div class="value">¥35</div>
+                                <div class="label">每月</div>
+                            </div>
+                            <div>
+                                <div class="value">¥349</div>
+                                <div class="label">每年</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success">立即购买</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 卡密管理 -->
+            <div id="card" class="page">
+                <h2><i class="fas fa-key"></i> 卡密管理</h2>
+                <p>输入您的卡密以激活服务</p>
+                
+                <div class="card" style="max-width: 600px; margin-top: 20px;">
+                    <div class="form-group">
+                        <label for="card-number"><i class="fas fa-credit-card"></i> 卡密号码</label>
+                        <input type="text" id="card-number" class="form-control" placeholder="请输入16位卡密号码">
+                    </div>
+                    
+                    <button class="btn">激活卡密</button>
+                </div>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-history"></i> 激活记录</h3>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(0,0,0,0.2);">
+                                    <th style="padding: 12px; text-align: left;">卡密</th>
+                                    <th style="padding: 12px; text-align: left;">激活时间</th>
+                                    <th style="padding: 12px; text-align: left;">有效期至</th>
+                                    <th style="padding: 12px; text-align: left;">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <td style="padding: 12px;">****-****-****-1234</td>
+                                    <td style="padding: 12px;">2023-10-01</td>
+                                    <td style="padding: 12px;">2024-10-01</td>
+                                    <td style="padding: 12px;"><span style="color: var(--success);">已激活</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px;">****-****-****-5678</td>
+                                    <td style="padding: 12px;">2023-09-25</td>
+                                    <td style="padding: 12px;">2023-12-25</td>
+                                    <td style="padding: 12px;"><span style="color: var(--warning);">即将到期</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 线路管理 -->
+            <div id="line" class="page">
+                <h2><i class="fas fa-server"></i> 线路管理</h2>
+                <p>查看和管理您当前的加速线路</p>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-wifi"></i> 当前使用线路</h3>
+                    
+                    <div class="server-card">
+                        <h4><i class="fas fa-globe-asia"></i> 亚洲优化线路 #2</h4>
+                        <p><i class="fas fa-tachometer-alt"></i> 当前延迟: <strong>28ms</strong></p>
+                        <p><i class="fas fa-shield-alt"></i> 防护状态: <strong style="color: var(--success);">已启用</strong></p>
+                        <p><i class="fas fa-plug"></i> 在线状态: <strong style="color: var(--success);">运行中</strong></p>
+                        <div class="ip">mc-accelerate.asia-2.example.com</div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label for="server-select"><i class="fas fa-exchange-alt"></i> 切换线路</label>
+                        <select id="server-select" class="form-control">
+                            <option>亚洲优化线路 #1</option>
+                            <option selected>亚洲优化线路 #2</option>
+                            <option>亚洲优化线路 #3</option>
+                            <option>北美线路 #1</option>
+                            <option>欧洲线路 #1</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn">应用更改</button>
+                </div>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-list"></i> 可用线路列表</h3>
+                    
+                    <div class="server-card">
+                        <h4><i class="fas fa-globe-asia"></i> 亚洲优化线路 #1</h4>
+                        <p>延迟: 32ms | 状态: <span style="color: var(--success);">正常</span></p>
+                        <div class="ip">mc-accelerate.asia-1.example.com</div>
+                    </div>
+                    
+                    <div class="server-card">
+                        <h4><i class="fas fa-globe-asia"></i> 亚洲优化线路 #3</h4>
+                        <p>延迟: 45ms | 状态: <span style="color: var(--warning);">中等负载</span></p>
+                        <div class="ip">mc-accelerate.asia-3.example.com</div>
+                    </div>
+                    
+                    <div class="server-card">
+                        <h4><i class="fas fa-globe-americas"></i> 北美线路 #1</h4>
+                        <p>延迟: 150ms | 状态: <span style="color: var(--success);">正常</span></p>
+                        <div class="ip">mc-accelerate.na-1.example.com</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 暂停时长 -->
+            <div id="timer" class="page">
+                <h2><i class="fas fa-clock"></i> 暂停时长</h2>
+                <p>管理您的服务使用时间，暂停服务以节省时长</p>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-user-clock"></i> 剩余服务时长</h3>
+                    
+                    <div style="display: flex; justify-content: space-around; margin: 30px 0;">
+                        <div style="text-align: center;">
+                            <div class="value" style="font-size: 36px; color: var(--accent);">87</div>
+                            <div class="label">剩余天数</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div class="value" style="font-size: 36px; color: var(--accent);">15</div>
+                            <div class="label">暂停天数</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timer">
+                        <h3><i class="fas fa-hourglass-half"></i> 服务计时器</h3>
+                        <div class="timer-display" id="time-display">87:15:32:10</div>
+                        <div class="timer-controls">
+                            <button class="timer-btn start">开始服务</button>
+                            <button class="timer-btn pause">暂停服务</button>
+                            <button class="timer-btn reset">重置</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 25px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px;">
+                        <h4><i class="fas fa-info-circle"></i> 使用说明</h4>
+                        <p style="margin-top: 10px;">1. 点击"暂停服务"可停止服务计时，节省您的服务时长</p>
+                        <p>2. 当您需要使用时，点击"开始服务"重新激活</p>
+                        <p>3. 暂停期间服务不可用</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户设置 -->
+            <div id="user-setting" class="page">
+                <h2><i class="fas fa-user-cog"></i> 用户设置</h2>
+                <p>管理您的账户信息和偏好设置</p>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <!-- 登录表单 -->
+                    <div class="setting-section">
+                        <h3><i class="fas fa-sign-in-alt"></i> 登录设置</h3>
+                        <div class="form-group">
+                            <label for="username"><i class="fas fa-user"></i> 用户名</label>
+                            <input type="text" id="username" class="form-control" value="User123" disabled>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password"><i class="fas fa-lock"></i> 密码</label>
+                            <input type="password" id="password" class="form-control" placeholder="输入新密码">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirm-password"><i class="fas fa-lock"></i> 确认密码</label>
+                            <input type="password" id="confirm-password" class="form-control" placeholder="再次输入新密码">
+                        </div>
+                        
+                        <button class="btn">更新密码</button>
+                    </div>
+                    
+                    <!-- 绑定QQ -->
+                    <div class="setting-section">
+                        <h3><i class="fab fa-qq"></i> QQ绑定</h3>
+                        <div class="form-group">
+                            <label for="qq-number"><i class="fas fa-id-card"></i> QQ号码</label>
+                            <input type="text" id="qq-number" class="form-control" placeholder="请输入您的QQ号码">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="qq-verify"><i class="fas fa-shield-alt"></i> 验证码</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="qq-verify" class="form-control" placeholder="输入验证码">
+                                <button class="btn" style="width: auto; padding: 10px 15px;">获取验证码</button>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-warning">绑定QQ</button>
+                        
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <p><i class="fas fa-info-circle"></i> 当前绑定: 未绑定</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 绑定ID -->
+                    <div class="setting-section">
+                        <h3><i class="fas fa-id-card-alt"></i> 游戏ID绑定</h3>
+                        <div class="form-group">
+                            <label for="game-id"><i class="fas fa-gamepad"></i> Minecraft游戏ID</label>
+                            <input type="text" id="game-id" class="form-control" placeholder="请输入您的游戏ID">
+                        </div>
+                        
+                        <button class="btn">绑定游戏ID</button>
+                        
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <p><i class="fas fa-info-circle"></i> 当前绑定: <strong>Player_001</strong></p>
+                            <p style="margin-top: 5px; font-size: 14px; color: rgba(255,255,255,0.7);">
+                                绑定时间: 2023-10-01 14:30
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统设置 -->
+            <div id="system-setting" class="page">
+                <h2><i class="fas fa-cog"></i> 系统设置</h2>
+                <p>高级系统配置选项</p>
+                
+                <div class="card" style="margin-top: 20px;">
+                    <div class="setting-section">
+                        <h3><i class="fas fa-bell"></i> 通知设置</h3>
+                        
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" style="margin-right: 10px;" checked>
+                                服务到期提醒
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" style="margin-right: 10px;" checked>
+                                线路状态通知
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" style="margin-right: 10px;">
+                                促销活动通知
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-section">
+                        <h3><i class="fas fa-paint-brush"></i> 主题设置</h3>
+                        
+                        <div style="display: flex; gap: 15px; margin-top: 15px;">
+                            <div style="width: 50px; height: 50px; border-radius: 8px; background: linear-gradient(135deg, #1a2a6c, #2c3e50); border: 2px solid var(--accent); cursor: pointer;"></div>
+                            <div style="width: 50px; height: 50px; border-radius: 8px; background: linear-gradient(135deg, #0f2027, #203a43); cursor: pointer;"></div>
+                            <div style="width: 50px; height: 50px; border-radius: 8px; background: linear-gradient(135deg, #232526, #414345); cursor: pointer;"></div>
+                            <div style="width: 50px; height: 50px; border-radius: 8px; background: linear-gradient(135deg, #3a1c71, #d76d77); cursor: pointer;"></div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" style="margin-top: 20px;">保存设置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面切换功能
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // 移除所有活动状态
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                
+                // 添加当前活动状态
+                this.classList.add('active');
+                const pageId = this.getAttribute('data-page');
+                document.getElementById(pageId).classList.add('active');
+                
+                // 在移动端点击后关闭侧边栏
+                if (window.innerWidth < 992) {
+                    document.getElementById('sidebar').classList.remove('active');
+                }
+            });
+        });
+
+        // 侧边栏切换按钮（移动端）
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        });
+
+        // 计时器模拟功能
+        let days = 87;
+        let hours = 15;
+        let minutes = 32;
+        let seconds = 10;
+        let timerRunning = true;
+        
+        function updateTimerDisplay() {
+            document.getElementById('time-display').textContent = 
+                `${days.toString().padStart(2, '0')}:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function runTimer() {
+            if (!timerRunning) return;
+            
+            seconds--;
+            if (seconds < 0) {
+                seconds = 59;
+                minutes--;
+                
+                if (minutes < 0) {
+                    minutes = 59;
+                    hours--;
+                    
+                    if (hours < 0) {
+                        hours = 23;
+                        days--;
+                    }
+                }
+            }
+            
+            updateTimerDisplay();
+        }
+        
+        // 初始显示
+        updateTimerDisplay();
+        
+        // 每秒更新计时器
+        setInterval(runTimer, 1000);
+        
+        // 计时器控制按钮
+        document.querySelector('.timer-btn.pause').addEventListener('click', function() {
+            timerRunning = false;
+            this.textContent = "继续服务";
+            this.classList.remove('pause');
+            this.classList.add('start');
+        });
+        
+        document.querySelector('.timer-btn.start').addEventListener('click', function() {
+            if (!timerRunning) {
+                timerRunning = true;
+                this.textContent = "暂停服务";
+                this.classList.remove('start');
+                this.classList.add('pause');
+            }
+        });
+        
+        document.querySelector('.timer-btn.reset').addEventListener('click', function() {
+            if (confirm('确定要重置计时器吗？')) {
+                days = 87;
+                hours = 15;
+                minutes = 32;
+                seconds = 10;
+                updateTimerDisplay();
+            }
+        });
+        
+        // 购买按钮事件
+        document.querySelectorAll('.btn-success').forEach(btn => {
+            btn.addEventListener('click', function() {
+                alert('即将跳转到支付页面...');
+                // 这里实际会跳转到支付接口
+            });
+        });
+        
+        // 绑定按钮事件
+        document.querySelectorAll('.btn-warning').forEach(btn => {
+            btn.addEventListener('click', function() {
+                alert('绑定请求已发送，请验证...');
+            });
+        });
+    </script>
+</body>
+</html>
